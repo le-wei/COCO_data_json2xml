@@ -98,11 +98,11 @@ def json2xml():
             ymax_txt = doc.createTextNode(str(int(bbox[1]+bbox[3])))
             ymax.appendChild(ymax_txt)
 
-            xmlpath = os.path.join(xmldir,filename.replace('.jpg','.xml'))
+        xmlpath = os.path.join(xmldir,filename.replace('.jpg','.xml'))
 
-            f = open(xmlpath, "w")
-            f.write(doc.toprettyxml(indent="  "))
-            f.close()
+        f = open(xmlpath, "w")
+        f.write(doc.toprettyxml(indent="  "))
+        f.close()
 
 createCate()
 json2xml()
