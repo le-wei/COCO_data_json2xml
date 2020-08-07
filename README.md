@@ -1,0 +1,2 @@
+# COCO_data_json2xml
+把COCO数据集的josn标注转变成VOC数据集xml格式的标注；json数据标注转xml数据标注；把coco数据集json格式转变单张图片对应的xml格式
