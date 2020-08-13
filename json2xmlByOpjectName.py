@@ -1,0 +1,134 @@
+import os
+import json
+import cv2
+from lxml import etree
+import xml.etree.cElementTree as ET
+import time
+import pandas as pd
+from tqdm import tqdm
+from xml.dom.minidom import Document
+anno = "instances_val2017.json"
+xml_dir = "test/"
+# dttm = time.strftime("%Y%m%d%H%M%S", time.localtime())
+# if os.path.exists(xml_dir):
+#     os.rename(xml_dir,xml_dir+dttm)
+# os.mkdir(xml_dir)
+import json
+
+
+
+with open(anno, 'r') as load_f:
+    f = json.load(load_f)
+df_anno = pd.DataFrame(f['annotations'])
+imgs = f['images']
+cata={}
+nameList=[ 'bench',  'backpack', 'umbrella', 'handbag', 'tie', 'suitcase', 'frisbee', 'skis', 'snowboard', 'sports ball', 'kite', 'baseball bat', 'baseball glove', 'skateboard', 'surfboard', 'tennis racket', 'bottle', 'wine glass', 'cup', 'fork', 'knife', 'spoon', 'bowl',  'banana', 'apple',
+'sandwich', 'orange', 'broccoli','carrot', 'hot dog', 'pizza', 'donut', 'laptop', 'mouse', 'remote', 'keyboard', 'cell phone', 'book', 'clock', 'vase', 'scissors', 'hair drier',  'toothbrush']
+#nameNum={ 'bench':0,  'backpack':0, 'umbrella':0, 'handbag':0, 'tie':0, 'suitcase':0, 'frisbee':0, 'skis':0, 'snowboard':0, 'sports ball':0, 'kite':0, 'baseball bat':0, 'baseball glove':0,
+#          'skateboard':0, 'surfboard':0, 'tennis racket':0, 'bottle':0, 'wine glass':0, 'cup':0, 'fork':0, 'knife':0, 'spoon':0, 'bowl':0,  'banana':0, 'apple':0,
+#'sandwich':0, 'orange':0, 'broccoli':0,'carrot':0, 'hot dog':0, 'pizza':0, 'donut':0, 'laptop':0, 'mouse':0, 'remote':0, 'keyboard':0, 'cell phone':0, 'book':0, 'clock':0, 'vase':0, 'scissors':0, 'hair drier':0,  'toothbrush':0}
+#imageSum=0
+flag=0
+def createCate():
+    global cata
+    df_cate = f['categories']
+    for item in df_cate:
+        cata[item['id']]=item['name']
+
+def json2xml():
+    global cata
+    global flag
+    #global imageSum
+    for im in imgs:
+        #imageSum = imageSum+1
+        flag = 0
+        filename = im['file_name']
+        height = im['height']
+        img_id = im['id']
+        width = im['width']
+        doc = Document()
+        annotation = doc.createElement('annotation')
+        doc.appendChild(annotation)
+        filenamedoc = doc.createElement("filename")
+        annotation.appendChild(filenamedoc)
+        filename_txt=doc.createTextNode(filename)
+        filenamedoc.appendChild(filename_txt)
+        size = doc.createElement("size")
+        annotation.appendChild(size)
+        widthdoc = doc.createElement("width")
+        size.appendChild(widthdoc)
+        width_txt = doc.createTextNode(str(width))
+        widthdoc.appendChild(width_txt)
+
+        heightdoc = doc.createElement("height")
+        size.appendChild(heightdoc)
+        height_txt = doc.createTextNode(str(height))
+        heightdoc.appendChild(height_txt)
+
+        annos = df_anno[df_anno["image_id"].isin([img_id])]
+        for index, row in annos.iterrows():
+            bbox = row["bbox"]
+            category_id = row["category_id"]
+            cate_name = cata[category_id]
+            if cate_name not in nameList:
+                print(cate_name+",don`t in namelis")
+                continue
+            flag=1
+            #nameNum[cate_name]=nameNum[cate_name]+1
+            object = doc.createElement('object')
+            annotation.appendChild(object)
+
+            name = doc.createElement('name')
+            object.appendChild(name)
+            name_txt = doc.createTextNode(cate_name)
+            name.appendChild(name_txt)
+
+            pose = doc.createElement('pose')
+            object.appendChild(pose)
+            pose_txt = doc.createTextNode('Unspecified')
+            pose.appendChild(pose_txt)
+
+            truncated = doc.createElement('truncated')
+            object.appendChild(truncated)
+            truncated_txt = doc.createTextNode('0')
+            truncated.appendChild(truncated_txt)
+
+            difficult = doc.createElement('difficult')
+            object.appendChild(difficult)
+            difficult_txt = doc.createTextNode('0')
+            difficult.appendChild(difficult_txt)
+
+            bndbox = doc.createElement('bndbox')
+            object.appendChild(bndbox)
+
+            xmin = doc.createElement('xmin')
+            bndbox.appendChild(xmin)
+            xmin_txt = doc.createTextNode(str(int(bbox[0])))
+            xmin.appendChild(xmin_txt)
+
+            ymin = doc.createElement('ymin')
+            bndbox.appendChild(ymin)
+            ymin_txt = doc.createTextNode(str(int(bbox[1])))
+            ymin.appendChild(ymin_txt)
+
+            xmax = doc.createElement('xmax')
+            bndbox.appendChild(xmax)
+            xmax_txt = doc.createTextNode(str(int(bbox[0]+bbox[2])))
+            xmax.appendChild(xmax_txt)
+
+            ymax = doc.createElement('ymax')
+            bndbox.appendChild(ymax)
+            ymax_txt = doc.createTextNode(str(int(bbox[1]+bbox[3])))
+            ymax.appendChild(ymax_txt)
+        if flag==1:
+            xml_path = os.path.join(xml_dir,filename.replace('.jpg','.xml'))
+
+            f = open(xml_path, "w")
+            f.write(doc.toprettyxml(indent="  "))
+            f.close()
+
+createCate()
+
+json2xml()
+#print('imagenum:',imageSum)
+#print(nameNum)
